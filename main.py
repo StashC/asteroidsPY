@@ -31,20 +31,20 @@ asteroids = []
 global attackCooldown
 #Load images
 #Background
-BLK_BACKGROUND = pygame.transform.scale(pygame.image.load(os.path.join("AsteroidsProject/assets", "background-1.png")), (WIDTH, HEIGHT))
+BLK_BACKGROUND = pygame.transform.scale(pygame.image.load(os.path.join("assets", "background-1.png")), (WIDTH, HEIGHT))
 #Player ship 0 = engine off, 1 = engine on (visual change)
-PLAYER_SHIP_0 = pygame.image.load(os.path.join("AsteroidsProject/assets", "player_0.png"))
-PLAYER_SHIP_1 = pygame.image.load(os.path.join("AsteroidsProject/assets", "player_1.png"))
-PLAYER_BULLET = pygame.image.load(os.path.join("AsteroidsProject/assets", "bullet_1.png"))
+PLAYER_SHIP_0 = pygame.image.load(os.path.join("assets", "player_0.png"))
+PLAYER_SHIP_1 = pygame.image.load(os.path.join("assets", "player_1.png"))
+PLAYER_BULLET = pygame.image.load(os.path.join("assets", "bullet_1.png"))
 
 #Asteroids
-ASTEROID_LG_1 = pygame.image.load(os.path.join("AsteroidsProject/assets", "asteroid_lg_1.png")) 
-ASTEROID_LG_2 = pygame.image.load(os.path.join("AsteroidsProject/assets", "asteroid_lg_2.png"))
-ASTEROID_MD_1 = pygame.image.load(os.path.join("AsteroidsProject/assets", "asteroid_md_1.png"))
-ASTEROID_MD_2 = pygame.image.load(os.path.join("AsteroidsProject/assets", "asteroid_md_2.png"))
-ASTEROID_SM_1 = pygame.image.load(os.path.join("AsteroidsProject/assets", "asteroid_sm_1.png"))
-ASTEROID_SM_2 = pygame.image.load(os.path.join("AsteroidsProject/assets", "asteroid_sm_2.png"))
-ASTEROID_SM_3 = pygame.image.load(os.path.join("AsteroidsProject/assets", "asteroid_sm_3.png"))
+ASTEROID_LG_1 = pygame.image.load(os.path.join("assets", "asteroid_lg_1.png")) 
+ASTEROID_LG_2 = pygame.image.load(os.path.join("assets", "asteroid_lg_2.png"))
+ASTEROID_MD_1 = pygame.image.load(os.path.join("assets", "asteroid_md_1.png"))
+ASTEROID_MD_2 = pygame.image.load(os.path.join("assets", "asteroid_md_2.png"))
+ASTEROID_SM_1 = pygame.image.load(os.path.join("assets", "asteroid_sm_1.png"))
+ASTEROID_SM_2 = pygame.image.load(os.path.join("assets", "asteroid_sm_2.png"))
+ASTEROID_SM_3 = pygame.image.load(os.path.join("assets", "asteroid_sm_3.png"))
 
 
 
@@ -180,6 +180,7 @@ def main():
                         bullets.remove(bullet)
                         asteroid.destroy()
                         break
+                        #break is necessary because bullets are the outer for loop, so might still be other asteroids to check for this bullet's iteration, but bullet now doesnt exist.
         
         #asteroids and player-asteroid collision
         for asteroid in asteroids:
