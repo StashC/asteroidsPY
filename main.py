@@ -1,4 +1,5 @@
 import random
+from tkinter import scrolledtext
 from turtle import Screen, speed
 from urllib.parse import DefragResult
 import pygame
@@ -13,6 +14,7 @@ WIDTH = 1280
 HEIGHT = 720
 GAME_FPS = 144
 
+UI_FONT = pygame.font.SysFont("roboto", 30, bold=True)
 
 PLAYER_ROT_SPEED = 3
 PLAYER_MAX_SPEED = 50
@@ -29,9 +31,16 @@ pygame.display.set_caption("Asteroids")
 bullets = []
 asteroids = []
 global attackCooldown
+global score
+global lives
+
+
+
+
 #Load images
 #Background
 BLK_BACKGROUND = pygame.transform.scale(pygame.image.load(os.path.join("assets", "background-1.png")), (WIDTH, HEIGHT))
+TITLE_SCREEN = pygame.transform.scale(pygame.image.load(os.path.join("assets", "titlescreen-1.png")), (WIDTH, HEIGHT))
 #Player ship 0 = engine off, 1 = engine on (visual change)
 PLAYER_SHIP_0 = pygame.image.load(os.path.join("assets", "player_0.png"))
 PLAYER_SHIP_1 = pygame.image.load(os.path.join("assets", "player_1.png"))
@@ -101,17 +110,25 @@ class Asteroid:
         window.blit(self.img, (self.x, self.y))
         
     def destroy(self):
-        if(self.size == "large"):
-            #add points ****            
+        global score
+        if(self.size == "large"):   
+            #add points            
+            score += 25      
             #spawn sub asteroids
             asteroids.append(Asteroid(self.x + random.randint(0,15), self.y + random.randint(0, 15), "medium"))
             asteroids.append(Asteroid(self.x - random.randint(0,15), self.y - random.randint(0, 15), "medium"))
         elif(self.size == "medium"):
-            #add points ****            
+            #add points       
+            score += 50     
             #spawn sub asteroids
             asteroids.append(Asteroid(self.x + random.randint(0,10), self.y + random.randint(0, 10), "small"))
-            asteroids.append(Asteroid(self.x - random.randint(0,10), self.y - random.randint(0, 10), "small"))                        
+            asteroids.append(Asteroid(self.x - random.randint(0,10), self.y - random.randint(0, 10), "small"))    
+                 
         #remove from game
+        elif(self.size == "small"):
+            #add points
+            score += 100      
+        print(score)                              
         asteroids.remove(self)
 
         
@@ -133,8 +150,13 @@ def main():
     run = True
     FPS = GAME_FPS
     player = Player(WIDTH/2, HEIGHT/2, 0, 100)
+    
     global attackCooldown
     attackCooldown = 0
+    global score
+    score = 0
+    global lives
+    lives = 3
     
     ##testing temp
     asteroid1 = Asteroid(100,100, "large")
@@ -142,10 +164,7 @@ def main():
     asteroid3 = Asteroid(500,500, "small")
     asteroids.append(asteroid1)
     asteroids.append(asteroid2)
-    asteroids.append(asteroid3)
-    
-    
-    
+    asteroids.append(asteroid3) 
     
     clock = pygame.time.Clock()
     
@@ -239,6 +258,15 @@ def main():
          
         player.draw(WINDOW)
         
+        #draw UI last
+        livesText = UI_FONT.render(f"Lives: {lives}", 1, (255,255,255))
+        scoreText = UI_FONT.render(f"Score: {score}", 1, (255,255,255))
+        
+        #Topleft
+        WINDOW.blit(scoreText, (15,15))
+        #Topright
+        WINDOW.blit(livesText, (WIDTH - livesText.get_width() - 15, 15))
+               
         pygame.display.update()        
     
     while run:
@@ -273,9 +301,27 @@ def main():
             if(player.speed.y + PLAYER_FORCE * -1*math.sin(player.rot * math.pi/180) < PLAYER_MAX_SPEED):
                 player.speed.y += PLAYER_FORCE * -1*math.sin(player.rot * math.pi/180)
             else:
-                player.speed.y = PLAYER_MAX_SPEED      
-        
+                player.speed.y = PLAYER_MAX_SPEED  
                 
-main()
+def main_menu():
+    run = True
+    while run:
+        text_font = pygame.font.SysFont("arial", 30, bold=True)
+        WINDOW.blit(TITLE_SCREEN, (0,0))
+        promptText = text_font.render("Press space to begin... ", 1, (27,182,27))
+        WINDOW.blit(promptText, (WIDTH/2 - promptText.get_width()/2, HEIGHT/2 + 100))
+                        
+        pygame.display.update()
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                run = False        
+        keysIn = pygame.key.get_pressed()
+        if(keysIn[pygame.K_SPACE]):
+            main()
+        
+    pygame.quit
+    
+main_menu()
 
 
