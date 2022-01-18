@@ -1,5 +1,7 @@
+from asyncio.windows_events import NULL
+from cgitb import small
 import random
-from tkinter import scrolledtext
+from tkinter import CENTER, scrolledtext
 from turtle import Screen, speed
 from urllib.parse import DefragResult
 import pygame
@@ -55,9 +57,6 @@ ASTEROID_SM_1 = pygame.image.load(os.path.join("assets", "asteroid_sm_1.png"))
 ASTEROID_SM_2 = pygame.image.load(os.path.join("assets", "asteroid_sm_2.png"))
 ASTEROID_SM_3 = pygame.image.load(os.path.join("assets", "asteroid_sm_3.png"))
 
-
-
-
 def blitRotateCenter(surf, image, topleft, angle):
 
     rotated_image = pygame.transform.rotate(image, angle)
@@ -66,15 +65,16 @@ def blitRotateCenter(surf, image, topleft, angle):
     surf.blit(rotated_image, new_rect)
 
 ##PLAYER CLASS
-class Player:
-    def __init__(self, x, y, rot=90, health=100):
+class Player(pygame.sprite.Sprite):
+    def __init__(self, x, y, rot=90):
+        pygame.sprite.Sprite.__init__(self)
         self.x = x
         self.y = y
         self.rot = rot
         self.speed = pygame.Vector2()
         self.defImg = PLAYER_SHIP_0
         self.mask = pygame.mask.from_surface(PLAYER_SHIP_0)
-        self.max_health = health
+        self.rect = self.defImg.get_rect()
             
     def draw(self, window):
         self.curImg = self.defImg
@@ -82,19 +82,27 @@ class Player:
         #WINDOW.blit(self.curImg, (self.x, self.y))
         
         blitRotateCenter(WINDOW, self.curImg, (self.x, self.y), self.rot)
+    
+    def respawn(self):
+        self.x = WIDTH/2 - 0.5*self.curImg.get_width()
+        self.y = HEIGHT/2 - 0.5*self.curImg.get_height()
+        self.speed = pygame.Vector2()
+        self.rot = 0
+        
         
 ##ASTEROID CLASS
-class Asteroid:
+class Asteroid(pygame.sprite.Sprite):
     def __init__(self, x, y, size):
+        pygame.sprite.Sprite.__init__(self)
         self.x = x
         self.y = y
         self.size = size
+        asteroids_group.add(self)
         #LARGE 
         if(size == "large"):
             self.img = ASTEROID_LG_1
             self.xVel = random.randint(-1, 1)
-            self.yVel = random.randint(-1, 1)
-            
+            self.yVel = random.randint(-1, 1)            
         #MEDIUM
         elif(size== "medium"):
             self.img = ASTEROID_MD_1
@@ -105,6 +113,10 @@ class Asteroid:
             self.img = ASTEROID_SM_1
             self.xVel = random.randint(-4, 4)
             self.yVel = random.randint(-4, 4)
+           
+        self.rect = self.img.get_rect()
+        self.mask = pygame.mask.from_surface(self.img)       
+
         
     def draw(self, window):
         window.blit(self.img, (self.x, self.y))
@@ -127,8 +139,12 @@ class Asteroid:
         #remove from game
         elif(self.size == "small"):
             #add points
-            score += 100      
-        print(score)                              
+            score += 100
+        asteroids_group.remove(self)                               
+        asteroids.remove(self)
+        
+    def kill(self):
+        asteroids_group.remove(self)
         asteroids.remove(self)
 
         
@@ -149,32 +165,42 @@ class Bullet:
 def main():
     run = True
     FPS = GAME_FPS
-    player = Player(WIDTH/2, HEIGHT/2, 0, 100)
+    player = Player(WIDTH/2, HEIGHT/2, 0)
     
     global attackCooldown
-    attackCooldown = 0
+    attackCooldown = .2
     global score
     score = 0
     global lives
     lives = 3
+    global asteroids_group
+    asteroids_group = pygame.sprite.Group()
     
-    ##testing temp
-    asteroid1 = Asteroid(100,100, "large")
-    asteroid2 = Asteroid(300,100, "medium")
-    asteroid3 = Asteroid(500,500, "small")
-    asteroids.append(asteroid1)
-    asteroids.append(asteroid2)
-    asteroids.append(asteroid3) 
+    ##TESTING
+    #asteroids.append(Asteroid(400,400, 'medium'))
+    #asteroids.append(Asteroid(400,410, 'medium'))
+    
     
     clock = pygame.time.Clock()
-    
-    def update():
+    def reset():
         global attackCooldown
+        attackCooldown = 0.2
+        global score
+        score = 0
+        lives = 0
+        global asteroids
+        lives = 3
+        asteroids = []
+        
+    def update():        
+        global attackCooldown
+        global lives
         attackCooldown -= 1/GAME_FPS
         #Update player position
         player.x += player.speed.x
         player.y += player.speed.y
         
+        #PLAYER COLLISION          
         #left bound
         if(player.x + 10 < 0):
             player.x = WIDTH
@@ -201,21 +227,31 @@ def main():
                         break
                         #break is necessary because bullets are the outer for loop, so might still be other asteroids to check for this bullet's iteration, but bullet now doesnt exist.
         
-        #asteroids and player-asteroid collision
+        #asteroids
         for asteroid in asteroids:
             asteroid.x += asteroid.xVel
             asteroid.y += asteroid.yVel
+            
+            #COLLISION
+            if(player.x + player.curImg.get_width() > asteroid.x and player.x < asteroid.x + asteroid.img.get_width()):
+                if(player.y + player.curImg.get_height() > asteroid.y and player.y < asteroid.y + asteroid.img.get_height()):
+                    print("collided with player")
+                    lives -= 1
+                    asteroid.kill()
+                    player.respawn()             
+            
+            #BOUNDARIES
             #left bound
-            if(asteroid.x + 10 < 0):
+            if(asteroid.x + asteroid.img.get_width() < 0):
                 asteroid.x = WIDTH
             #right bound
-            if(asteroid.x - 10 > WIDTH):
+            if(asteroid.x - asteroid.img.get_width() > WIDTH):
                 asteroid.x = -10
             #top bound
-            if(asteroid.y + 10 < 0):
+            if(asteroid.y + asteroid.img.get_height() < 0):
                 asteroid.y = HEIGHT
             #bottom bound
-            if(asteroid.y - 10 > HEIGHT):
+            if(asteroid.y - asteroid.img.get_height() > HEIGHT):
                 asteroid.y = -10   
        
        ##SPAWNING ASTEROIDS
@@ -266,7 +302,7 @@ def main():
         WINDOW.blit(scoreText, (15,15))
         #Topright
         WINDOW.blit(livesText, (WIDTH - livesText.get_width() - 15, 15))
-               
+        
         pygame.display.update()        
     
     while run:
@@ -276,6 +312,7 @@ def main():
         
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
+                reset()
                 run = False
         
         ##Handle Input
