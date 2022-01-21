@@ -1,13 +1,14 @@
+import math
+import os
+import random
+import time
 from asyncio.windows_events import NULL
 from cgitb import small
-import random
 from tkinter import CENTER, scrolledtext
 from turtle import Screen, speed
 from urllib.parse import DefragResult
+
 import pygame
-import time
-import os
-import math
 
 pygame.font.init()
 
@@ -16,7 +17,7 @@ WIDTH = 1280
 HEIGHT = 720
 GAME_FPS = 144
 
-UI_FONT = pygame.font.SysFont("roboto", 30, bold=True)
+UI_FONT = pygame.font.Font(os.path.join("fonts", "VCR_OSD_MONO_1.001.ttf"), 24)
 
 PLAYER_ROT_SPEED = 3
 PLAYER_MAX_SPEED = 50
@@ -29,14 +30,11 @@ BULLET_SPEED = 12
 WINDOW = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Asteroids")
 
-
 bullets = []
 asteroids = []
 global attackCooldown
 global score
 global lives
-
-
 
 
 #Load images
@@ -87,8 +85,7 @@ class Player(pygame.sprite.Sprite):
         self.x = WIDTH/2 - 0.5*self.curImg.get_width()
         self.y = HEIGHT/2 - 0.5*self.curImg.get_height()
         self.speed = pygame.Vector2()
-        self.rot = 0
-        
+        self.rot = 0        
         
 ##ASTEROID CLASS
 class Asteroid(pygame.sprite.Sprite):
@@ -116,7 +113,6 @@ class Asteroid(pygame.sprite.Sprite):
            
         self.rect = self.img.get_rect()
         self.mask = pygame.mask.from_surface(self.img)       
-
         
     def draw(self, window):
         window.blit(self.img, (self.x, self.y))
@@ -157,10 +153,8 @@ class Bullet:
         self.img = PLAYER_BULLET
         self.active = True
         
-    
     def draw(self, window):
         window.blit(self.img, (self.x, self.y))
-        
 
 def main():
     run = True
@@ -168,29 +162,24 @@ def main():
     player = Player(WIDTH/2, HEIGHT/2, 0)
     
     global attackCooldown
-    attackCooldown = .2
     global score
-    score = 0
     global lives
-    lives = 3
-    global asteroids_group
+    global asteroids_group    
+    attackCooldown = .2
+    score = 0
+    lives = 1
     asteroids_group = pygame.sprite.Group()
-    
-    ##TESTING
-    #asteroids.append(Asteroid(400,400, 'medium'))
-    #asteroids.append(Asteroid(400,410, 'medium'))
-    
-    
+       
     clock = pygame.time.Clock()
     def reset():
         global attackCooldown
-        attackCooldown = 0.2
-        global score
-        score = 0
-        lives = 0
         global asteroids
-        lives = 3
+        global score
+        global lives
+        attackCooldown = 0.2        
         asteroids = []
+        lives = 3
+        score = 0                
         
     def update():        
         global attackCooldown
@@ -200,7 +189,7 @@ def main():
         player.x += player.speed.x
         player.y += player.speed.y
         
-        #PLAYER COLLISION          
+        #PLAYER BOUNDS   
         #left bound
         if(player.x + 10 < 0):
             player.x = WIDTH
@@ -303,17 +292,48 @@ def main():
         #Topright
         WINDOW.blit(livesText, (WIDTH - livesText.get_width() - 15, 15))
         
-        pygame.display.update()        
+        pygame.display.update()
+        
+    def end_screen():
+        isOver = True
+        while isOver:
+            score_font = pygame.font.Font(os.path.join("fonts", "VCR_OSD_MONO_1.001.ttf"), 30)
+            title_font = pygame.font.Font(os.path.join("fonts", "VCR_OSD_MONO_1.001.ttf"), 72)
+            WINDOW.blit(BLK_BACKGROUND, (0,0))
+            score_text = score_font.render(f"Score: {score}", 1, (255,255,255))
+            title_text = title_font.render("Game Over", 1, (255,255,255))
+            restart_text = score_font.render("Press 'r' to restart... ", 1, (27,182,27))
+
+            
+            WINDOW.blit(score_text, (WIDTH/2 - score_text.get_width()/2, HEIGHT/2))
+            WINDOW.blit(title_text, (WIDTH/2 - title_text.get_width()/2, HEIGHT/2 - 250)) 
+            WINDOW.blit(restart_text, (WIDTH/2 - restart_text.get_width()/2, HEIGHT/2 + 100))
+            
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    
+            keysIn = pygame.key.get_pressed()
+            if(keysIn[pygame.K_r]):
+                isOver = False
+                reset()
+            
+            pygame.display.update()              
     
     while run:
         clock.tick(FPS)
         update()
         draw()
         
+        ##Loss Screen
+        if(lives == 0):
+            end_screen()            
+        
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                reset()
+                #reset()
                 run = False
+
         
         ##Handle Input
         keys = pygame.key.get_pressed()
@@ -355,10 +375,11 @@ def main_menu():
                 run = False        
         keysIn = pygame.key.get_pressed()
         if(keysIn[pygame.K_SPACE]):
+            run = False
             main()
         
     pygame.quit
-    
+        
 main_menu()
 
 
